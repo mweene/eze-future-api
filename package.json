@@ -1,0 +1,22 @@
+{
+  "name": "eze-future-api",
+  "version": "0.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mweene/eze-future-api.git"
+  },
+  "author": "harrison mweene",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mweene/eze-future-api/issues"
+  },
+  "homepage": "https://github.com/mweene/eze-future-api#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
