@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-const db = new Database("./eze-future-database.sqlite", {
+const db = new Database("./src/db/eze-future-database.sqlite", {
   verbose: console.log,
 });
 
@@ -8,7 +8,7 @@ db.prepare(
   `
   CREATE TABLE IF NOT EXISTS clients (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     sex TEXT,
     nrc TEXT,
     phone TEXT,

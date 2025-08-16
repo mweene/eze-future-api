@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint . --ext .ts",
-    "build": "tsc",
-    "dev": "node --watch ./dist/index.js"
+    "dev": "tsc && node --watch ./dist/index.js",
+    "seed": "tsc && node seed.js"
   },
   "repository": {
     "type": "git",
