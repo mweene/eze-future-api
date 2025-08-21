@@ -1,11 +1,12 @@
 import express from "express";
-import helmet from "helmet";
-import cors from "cors";
-import morgan from "morgan";
 import { json, urlencoded } from "express";
-import router from "./routes/index.js";
-const port = process.env.PORT || 3000;
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import router from "./router/index.js";
+const port = process.env.PORT || 5000;
 const app = express();
+//intialize middleware
 app.use(helmet());
 app.use(cors());
 app.use(morgan("dev"));
