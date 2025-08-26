@@ -18,4 +18,16 @@ function getAllClients(req, res) {
         res.status(500).json({ message: error.message });
     }
 }
-export { defaultRoute, getAllClients };
+function createClient(req, res) {
+    try {
+        const { name, nrc, phone, email, address } = req.body;
+        const client = db
+            .prepare("INSERT INTO clients (name, nrc, phone, email, address) VALUES (?, ?, ?, ?, ?)")
+            .run(name, nrc, phone, email, address);
+        res.status(201).json({ id: client.lastInsertRowid });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+export { defaultRoute, getAllClients, createClient };
