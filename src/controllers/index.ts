@@ -106,13 +106,67 @@ function createClient(req: Request, res: Response) {
 
 function updateClient(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
     const { name, nrc, phone, email, address } = req.body;
-    const stmt = db.prepare(
+    const { plot_number, plot_size, location, site_plan_link } = req.body;
+    const { total_cost, amount_paid, balance } = req.body;
+    const { id_copy, contract, other_doc } = req.body;
+
+    const updateClientDetails = db.prepare(
       "UPDATE clients SET name=?, nrc=?, phone=?, email=?, address=? WHERE id=?",
     );
-    stmt.run(name, nrc, phone, email, address, id);
-    res.status(200).json({ message: "client successfully updated" });
+    const updatePlotDetails = db.prepare(
+      "UPDATE plots SET plot_number=?, plot_size=?, location=?, site_plan_link=? WHERE client_id = ?",
+    );
+    const updateSalesDetails = db.prepare(
+      "UPDATE sales SET total_cost=?, amount_paid=?, balance=? WHERE client_id=?",
+    );
+    const updateWitnessDetails = db.prepare(
+      "UPDATE witness SET name=?, nrc=?, phone=?, address=?, relationship=? WHERE client_id=?",
+    );
+    const updateDocumentsDetails = db.prepare(
+      "UPDATE documents SET id_copy=?, contract=?, other_doc=? WHERE client_id=?",
+    );
+
+    const transactions = db.transaction((id: number) => {
+      const result = updateClientDetails.run(
+        name,
+        nrc,
+        phone,
+        email,
+        address,
+        id,
+      );
+      const client_id = result.lastInsertRowid;
+
+      if (client_id) {
+        updatePlotDetails.run(
+          plot_number,
+          plot_size,
+          location,
+          site_plan_link,
+          client_id,
+        );
+        updateSalesDetails.run(total_cost, amount_paid, balance, client_id);
+        updateWitnessDetails.run(
+          req.body.witness.name,
+          req.body.witness.nrc,
+          req.body.witness.phone,
+          req.body.witness.address,
+          req.body.witness.relationship,
+          client_id,
+        );
+        updateDocumentsDetails.run(id_copy, contract, other_doc, client_id);
+      }
+
+      return client_id;
+    });
+
+    const transactionsResult = transactions(id);
+    res.status(200).json({
+      message: "client successfully updated",
+      client_id: transactionsResult,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -121,7 +175,9 @@ function updateClient(req: Request, res: Response) {
 function deleteClient(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+    const result = db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+    if (result.changes === 0)
+      return res.status(404).json({ message: "client not found" });
     res.status(200).json({ message: "successfully deleted client" });
   } catch (error) {
     res.status(500).json({ message: error.message });

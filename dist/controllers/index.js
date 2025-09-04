@@ -49,7 +49,6 @@ function createClient(req, res) {
     const { name, nrc, phone, email, address } = req.body;
     const { plot_number, plot_size, location, site_plan_link } = req.body.plots;
     const { total_cost, amount_paid, balance } = req.body.sales;
-    const { witnessName, witnessNrc, witnessPhone, witnessAddress, relationship, } = req.body.witness;
     const { id_copy, contract, other_doc } = req.body.documents;
     const insertClientDetails = db.prepare("INSERT INTO clients (name, nrc, phone, email, address) VALUES (?,?,?,?,?)");
     const insertPlotDetails = db.prepare("INSERT INTO plots (client_id, plot_number, plot_size, location, site_plan_link) VALUES (?,?,?,?,?)");
@@ -63,7 +62,7 @@ function createClient(req, res) {
             if (client_id) {
                 insertPlotDetails.run(client_id, plot_number, plot_size, location, site_plan_link);
                 insertSalesDetails.run(client_id, total_cost, amount_paid, balance);
-                insertWitnessDetails.run(client_id, req.body.witness.name, witnessNrc, witnessPhone, witnessAddress, relationship);
+                insertWitnessDetails.run(client_id, req.body.witness.name, req.body.witness.nrc, req.body.witness.phone, req.body.witness.address, req.body.witness.relationship);
                 insertDocumentsDetails.run(client_id, id_copy, contract, other_doc);
             }
             return client_id;
@@ -77,11 +76,32 @@ function createClient(req, res) {
 }
 function updateClient(req, res) {
     try {
-        const { id } = req.params;
+        const id = Number(req.params.id);
         const { name, nrc, phone, email, address } = req.body;
-        const stmt = db.prepare("UPDATE clients SET name=?, nrc=?, phone=?, email=?, address=? WHERE id=?");
-        stmt.run(name, nrc, phone, email, address, id);
-        res.status(200).json({ message: "client successfully updated" });
+        const { plot_number, plot_size, location, site_plan_link } = req.body;
+        const { total_cost, amount_paid, balance } = req.body;
+        const { id_copy, contract, other_doc } = req.body;
+        const updateClientDetails = db.prepare("UPDATE clients SET name=?, nrc=?, phone=?, email=?, address=? WHERE id=?");
+        const updatePlotDetails = db.prepare("UPDATE plots SET plot_number=?, plot_size=?, location=?, site_plan_link=? WHERE client_id = ?");
+        const updateSalesDetails = db.prepare("UPDATE sales SET total_cost=?, amount_paid=?, balance=? WHERE client_id=?");
+        const updateWitnessDetails = db.prepare("UPDATE witness SET name=?, nrc=?, phone=?, address=?, relationship=? WHERE client_id=?");
+        const updateDocumentsDetails = db.prepare("UPDATE documents SET id_copy=?, contract=?, other_doc=? WHERE client_id=?");
+        const transactions = db.transaction((id) => {
+            const result = updateClientDetails.run(name, nrc, phone, email, address, id);
+            const client_id = result.lastInsertRowid;
+            if (client_id) {
+                updatePlotDetails.run(plot_number, plot_size, location, site_plan_link, client_id);
+                updateSalesDetails.run(total_cost, amount_paid, balance, client_id);
+                updateWitnessDetails.run(req.body.witness.name, req.body.witness.nrc, req.body.witness.phone, req.body.witness.address, req.body.witness.relationship, client_id);
+                updateDocumentsDetails.run(id_copy, contract, other_doc, client_id);
+            }
+            return client_id;
+        });
+        const transactionsResult = transactions(id);
+        res.status(200).json({
+            message: "client successfully updated",
+            client_id: transactionsResult,
+        });
     }
     catch (error) {
         res.status(500).json({ message: error.message });
@@ -90,7 +110,9 @@ function updateClient(req, res) {
 function deleteClient(req, res) {
     try {
         const { id } = req.params;
-        db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+        const result = db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+        if (result.changes === 0)
+            return res.status(404).json({ message: "client not found" });
         res.status(200).json({ message: "successfully deleted client" });
     }
     catch (error) {
