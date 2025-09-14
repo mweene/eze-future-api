@@ -108,9 +108,9 @@ function updateClient(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
     const { name, nrc, phone, email, address } = req.body;
-    const { plot_number, plot_size, location, site_plan_link } = req.body;
-    const { total_cost, amount_paid, balance } = req.body;
-    const { id_copy, contract, other_doc } = req.body;
+    const { plot_number, plot_size, location, site_plan_link } = req.body.plots;
+    const { total_cost, amount_paid, balance } = req.body.sales;
+    const { id_copy, contract, other_doc } = req.body.documents;
 
     const updateClientDetails = db.prepare(
       "UPDATE clients SET name=?, nrc=?, phone=?, email=?, address=? WHERE id=?",
