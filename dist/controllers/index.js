@@ -11,11 +11,28 @@ function defaultRoute(req, res) {
 }
 function getAllClients(req, res) {
     try {
-        const clients = db.prepare("SELECT * FROM clients").all();
-        res.status(200).json(clients);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const offset = (page - 1) * limit;
+        const countStmt = db.prepare("SELECT COUNT(*) AS total FROM clients");
+        const totalClients = countStmt.get().total;
+        const totalPages = Math.ceil(totalClients / limit);
+        const clientsStmt = db.prepare("SELECT * FROM clients LIMIT ? OFFSET ?");
+        const clients = clientsStmt.all(limit, offset);
+        res.status(200).json({
+            data: clients,
+            pagination: {
+                totalClients,
+                totalPages,
+                currentPage: page,
+                clientsPerPage: limit,
+                nextPage: page < totalPages ? page + 1 : null,
+                prevPage: page > 1 ? page - 1 : null,
+            },
+        });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: error.message });
     }
 }
 function getOneClient(req, res) {
