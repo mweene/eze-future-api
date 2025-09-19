@@ -24,6 +24,35 @@ interface PaginationResponse {
   };
 }
 
+function getOneClient(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
+    if (!client) return res.status(404).json({ message: "client not found" });
+
+    const plot = db.prepare("SELECT * FROM plots WHERE client_id = ?").get(id);
+    const sales = db.prepare("SELECT * FROM sales WHERE client_id = ?").get(id);
+    const witness = db
+      .prepare("SELECT * FROM witness WHERE client_id = ?")
+      .get(id);
+    const documents = db
+      .prepare("SELECT * FROM documents WHERE client_id = ?")
+      .get(id);
+
+    const fullDetails = {
+      client: client,
+      plot: plot || null,
+      sales: sales || null,
+      witness: witness || null,
+      documents: documents || null,
+    };
+
+    res.status(200).json(fullDetails);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
 function getAllClients(
   req: Request,
   res: Response<PaginationResponse | { error: string }>,
@@ -37,7 +66,21 @@ function getAllClients(
     const totalClients = (countStmt.get() as { total: number }).total;
     const totalPages = Math.ceil(totalClients / limit);
 
-    const clientsStmt = db.prepare("SELECT * FROM clients LIMIT ? OFFSET ?");
+    const clientsStmt = db.prepare(
+      `
+      SELECT
+        clients.id as client_id,
+        clients.name,
+        clients.phone,
+        plots.plot_size,
+        plots.location,
+        sales.total_cost,
+        sales.amount_paid
+        FROM clients
+        LEFT JOIN plots ON clients.id = plots.client_id
+        LEFT JOIN sales ON clients.id = sales.client_id LIMIT ? OFFSET ?;
+    `,
+    );
     const clients = clientsStmt.all(limit, offset);
 
     res.status(200).json({
@@ -52,36 +95,8 @@ function getAllClients(
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
-function getOneClient(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const client = db.prepare("SELECT * FROM clients WHERE id = ?").get(id);
-    if (!client) return res.status(404).json({ message: "client not found" });
-
-    const plot = db.prepare("SELECT * FROM plots WHERE client_id = ?").get(id);
-    const sales = db.prepare("SELECT * FROM sales WHERE client_id = ?").get(id);
-    const witness = db
-      .prepare("SELECT * FROM witness WHERE client_id = ?")
-      .get(id);
-    const documents = db
-      .prepare("SELECT * FROM documents WHERE client_id = ?")
-      .all(id);
-
-    const fullDetails = {
-      client: client,
-      plot: plot || null,
-      sales: sales || null,
-      witness: witness || null,
-      documents: documents.length > 0 ? documents : [],
-    };
-
-    res.status(200).json(fullDetails);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Database error" });
   }
 }
 

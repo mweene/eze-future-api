@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint . --ext .ts",
     "build": "tsc",
-    "dev": "tsc && node --watch ./dist/index.js"
+    "dev": "tsc && node --watch ./dist/index.js",
+    "seed": "tsc && node ./dist/db/seed.js"
   },
   "repository": {
     "type": "git",
