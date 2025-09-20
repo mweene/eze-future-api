@@ -73,7 +73,7 @@ function getAllClients(
         clients.name,
         clients.phone,
         plots.plot_size,
-        plots.location,
+        plots.site_name,
         sales.total_cost,
         sales.amount_paid
         FROM clients
@@ -102,7 +102,8 @@ function getAllClients(
 
 function createClient(req: Request, res: Response) {
   const { name, nrc, phone, email, address } = req.body;
-  const { plot_number, plot_size, location, site_plan_link } = req.body.plots;
+  const { plot_number, plot_size, location, site_name, site_plan_link } =
+    req.body.plots;
   const { total_cost, amount_paid, balance } = req.body.sales;
   const { id_copy, contract, other_doc } = req.body.documents;
 
@@ -110,7 +111,7 @@ function createClient(req: Request, res: Response) {
     "INSERT INTO clients (name, nrc, phone, email, address) VALUES (?,?,?,?,?)",
   );
   const insertPlotDetails = db.prepare(
-    "INSERT INTO plots (client_id, plot_number, plot_size, location, site_plan_link) VALUES (?,?,?,?,?)",
+    "INSERT INTO plots (client_id, plot_number, plot_size, location, site_name, site_plan_link) VALUES (?,?,?,?,?,?)",
   );
   const insertSalesDetails = db.prepare(
     "INSERT INTO sales (client_id, total_cost, amount_paid, balance) VALUES (?,?,?,?)",
@@ -133,6 +134,7 @@ function createClient(req: Request, res: Response) {
           plot_number,
           plot_size,
           location,
+          site_name,
           site_plan_link,
         );
         insertSalesDetails.run(client_id, total_cost, amount_paid, balance);
@@ -159,7 +161,8 @@ function updateClient(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
     const { name, nrc, phone, email, address } = req.body;
-    const { plot_number, plot_size, location, site_plan_link } = req.body.plots;
+    const { plot_number, plot_size, location, site_name, site_plan_link } =
+      req.body.plots;
     const { total_cost, amount_paid, balance } = req.body.sales;
     const { id_copy, contract, other_doc } = req.body.documents;
 
@@ -167,7 +170,7 @@ function updateClient(req: Request, res: Response) {
       "UPDATE clients SET name=?, nrc=?, phone=?, email=?, address=? WHERE id=?",
     );
     const updatePlotDetails = db.prepare(
-      "UPDATE plots SET plot_number=?, plot_size=?, location=?, site_plan_link=? WHERE client_id = ?",
+      "UPDATE plots SET plot_number=?, plot_size=?, location=?, site_name=? site_plan_link=? WHERE client_id = ?",
     );
     const updateSalesDetails = db.prepare(
       "UPDATE sales SET total_cost=?, amount_paid=?, balance=? WHERE client_id=?",
@@ -195,6 +198,7 @@ function updateClient(req: Request, res: Response) {
           plot_number,
           plot_size,
           location,
+          site_name,
           site_plan_link,
           client_id,
         );

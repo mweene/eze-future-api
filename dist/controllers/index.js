@@ -50,7 +50,7 @@ function getAllClients(req, res) {
         clients.name,
         clients.phone,
         plots.plot_size,
-        plots.location,
+        plots.site_name,
         sales.total_cost,
         sales.amount_paid
         FROM clients
