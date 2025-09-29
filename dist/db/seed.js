@@ -1,63 +1,238 @@
 import db from "./index.js";
 // Zambian names (both male and female)
 const zambianNames = [
-    "Chanda Mwansa", "Bwalya Katongo", "Mutale Chipango", "Kasonde Mulenga", "Natasha Banda",
-    "Emmanuel Phiri", "Grace Tembo", "Joseph Kunda", "Mary Sichone", "Patrick Zulu",
-    "Elizabeth Nyirenda", "Moses Kabwe", "Ruth Chilufya", "Daniel Mubanga", "Sarah Nkole",
-    "Peter Mwila", "Joyce Sakala", "Christopher Simbeya", "Agnes Mwape", "Francis Kaponda",
-    "Margaret Lungu", "John Kabamba", "Mercy Chisanga", "David Mbewe", "Catherine Mwanza",
-    "Anthony Silwamba", "Beatrice Chanda", "Michael Ng'andu", "Prisca Sinyangwe", "Robert Kampamba",
-    "Charity Mumba", "Stephen Kalaba", "Faith Kasanga", "George Siame", "Helen Bwalya",
-    "Isaac Musonda", "Janet Mwila", "Kenneth Lubasi", "Lydia Chongo", "Martin Chileshe",
-    "Nancy Kaseba", "Oliver Kayumba", "Patricia Mukuka", "Quinton Muyunda", "Rebecca Chisenga",
-    "Samuel Nsofwa", "Theresa Mundia", "Urias Chibomba", "Veronica Kapila", "William Kangombe",
-    "Alice Mwelwa", "Benjamin Chilongo", "Constance Nkhuwa", "Duncan Musenga", "Esther Mwenechanya",
-    "Felix Hampongo", "Gladys Mubiana", "Henry Mazoka", "Ireen Kasonde", "Jackson Nkole",
-    "Karen Chepukuma", "Lawrence Mutale", "Monica Simwanza", "Nathan Chintu", "Olivia Chanda",
-    "Philip Tembo", "Queen Malama", "Richard Muleya", "Stella Mwambazi", "Timothy Kabaso",
-    "Ursula Kaoma", "Victor Chanda", "Winnie Mwanawasa", "Xavier Mumba", "Yvonne Kalaba",
-    "Zachary Lubinda", "Agatha Mukonda", "Brian Mwanza", "Carol Sichinga", "Dennis Mayeya",
-    "Edith Chinyama", "Franklin Katebe", "Gloria Mutinta", "Harrison Kabwe", "Irene Lubambo",
-    "James Simunji", "Kunda Mwanangombe", "Lovemore Mwila", "Memory Chilombo", "Nicholas Mwenda",
-    "Owen Tembo", "Pauline Mulenga", "Quickson Banda", "Rose Chabala", "Silas Kapembwa",
-    "Tamara Mweene", "Umberto Kasempa", "Violet Mwaba", "Washington Mutale", "Xenia Chibesakunda",
-    "Yamikani Chulu", "Zipporah Chola", "Anderson Maimbo", "Bridget Sialubalo", "Collins Mwangi",
-    "Dorothy Zulu", "Edwin Mubanga", "Florence Banda", "Gibson Siamachoka", "Hannah Phiri",
-    "Ivan Muyeba", "Josephine Chiluba", "Kevin Sakala", "Linda Chileshe", "Maxwell Chanda",
-    "Ndanji Mutale", "Oscar Nyirenda", "Prudence Mwanza", "Quincy Kabwe", "Rosemary Mulenga",
-    "Simon Chilufya", "Twambo Banda", "Umoya Tembo", "Victoria Katongo", "Walter Mwila"
+    "Chanda Mwansa",
+    "Bwalya Katongo",
+    "Mutale Chipango",
+    "Kasonde Mulenga",
+    "Natasha Banda",
+    "Emmanuel Phiri",
+    "Grace Tembo",
+    "Joseph Kunda",
+    "Mary Sichone",
+    "Patrick Zulu",
+    "Elizabeth Nyirenda",
+    "Moses Kabwe",
+    "Ruth Chilufya",
+    "Daniel Mubanga",
+    "Sarah Nkole",
+    "Peter Mwila",
+    "Joyce Sakala",
+    "Christopher Simbeya",
+    "Agnes Mwape",
+    "Francis Kaponda",
+    "Margaret Lungu",
+    "John Kabamba",
+    "Mercy Chisanga",
+    "David Mbewe",
+    "Catherine Mwanza",
+    "Anthony Silwamba",
+    "Beatrice Chanda",
+    "Michael Ng'andu",
+    "Prisca Sinyangwe",
+    "Robert Kampamba",
+    "Charity Mumba",
+    "Stephen Kalaba",
+    "Faith Kasanga",
+    "George Siame",
+    "Helen Bwalya",
+    "Isaac Musonda",
+    "Janet Mwila",
+    "Kenneth Lubasi",
+    "Lydia Chongo",
+    "Martin Chileshe",
+    "Nancy Kaseba",
+    "Oliver Kayumba",
+    "Patricia Mukuka",
+    "Quinton Muyunda",
+    "Rebecca Chisenga",
+    "Samuel Nsofwa",
+    "Theresa Mundia",
+    "Urias Chibomba",
+    "Veronica Kapila",
+    "William Kangombe",
+    "Alice Mwelwa",
+    "Benjamin Chilongo",
+    "Constance Nkhuwa",
+    "Duncan Musenga",
+    "Esther Mwenechanya",
+    "Felix Hampongo",
+    "Gladys Mubiana",
+    "Henry Mazoka",
+    "Ireen Kasonde",
+    "Jackson Nkole",
+    "Karen Chepukuma",
+    "Lawrence Mutale",
+    "Monica Simwanza",
+    "Nathan Chintu",
+    "Olivia Chanda",
+    "Philip Tembo",
+    "Queen Malama",
+    "Richard Muleya",
+    "Stella Mwambazi",
+    "Timothy Kabaso",
+    "Ursula Kaoma",
+    "Victor Chanda",
+    "Winnie Mwanawasa",
+    "Xavier Mumba",
+    "Yvonne Kalaba",
+    "Zachary Lubinda",
+    "Agatha Mukonda",
+    "Brian Mwanza",
+    "Carol Sichinga",
+    "Dennis Mayeya",
+    "Edith Chinyama",
+    "Franklin Katebe",
+    "Gloria Mutinta",
+    "Harrison Kabwe",
+    "Irene Lubambo",
+    "James Simunji",
+    "Kunda Mwanangombe",
+    "Lovemore Mwila",
+    "Memory Chilombo",
+    "Nicholas Mwenda",
+    "Owen Tembo",
+    "Pauline Mulenga",
+    "Quickson Banda",
+    "Rose Chabala",
+    "Silas Kapembwa",
+    "Tamara Mweene",
+    "Umberto Kasempa",
+    "Violet Mwaba",
+    "Washington Mutale",
+    "Xenia Chibesakunda",
+    "Yamikani Chulu",
+    "Zipporah Chola",
+    "Anderson Maimbo",
+    "Bridget Sialubalo",
+    "Collins Mwangi",
+    "Dorothy Zulu",
+    "Edwin Mubanga",
+    "Florence Banda",
+    "Gibson Siamachoka",
+    "Hannah Phiri",
+    "Ivan Muyeba",
+    "Josephine Chiluba",
+    "Kevin Sakala",
+    "Linda Chileshe",
+    "Maxwell Chanda",
+    "Ndanji Mutale",
+    "Oscar Nyirenda",
+    "Prudence Mwanza",
+    "Quincy Kabwe",
+    "Rosemary Mulenga",
+    "Simon Chilufya",
+    "Twambo Banda",
+    "Umoya Tembo",
+    "Victoria Katongo",
+    "Walter Mwila",
 ];
 // Zambian locations/areas
 const zambianLocations = [
-    "Garden Compound", "Kanyama", "Matero", "Chilenje", "Roma", "Northmead", "Woodlands",
-    "Avondale", "Olympia", "Kalundu", "Kamwala", "New Kasama", "Libala", "Chelstone",
-    "PHI", "Mtendere", "Ng'ombe", "George", "Chainda", "Chawama", "Mandevu", "Bauleni",
-    "Makeni", "Zingalume", "Linda", "Kabanana", "Kafue", "Chongwe", "Mumbwa", "Mazabuka",
-    "Monze", "Chipata", "Kasama", "Solwezi", "Ndola", "Kitwe", "Chingola", "Mufulira",
-    "Kalulushi", "Kabwe", "Kapiri Mposhi", "Serenje", "Mkushi", "Petauke", "Katete",
-    "Lundazi", "Mansa", "Kawambwa", "Nchelenge", "Chililabombwe", "Livingstone"
+    "Garden Compound",
+    "Kanyama",
+    "Matero",
+    "Chilenje",
+    "Roma",
+    "Northmead",
+    "Woodlands",
+    "Avondale",
+    "Olympia",
+    "Kalundu",
+    "Kamwala",
+    "New Kasama",
+    "Libala",
+    "Chelstone",
+    "PHI",
+    "Mtendere",
+    "Ng'ombe",
+    "George",
+    "Chainda",
+    "Chawama",
+    "Mandevu",
+    "Bauleni",
+    "Makeni",
+    "Zingalume",
+    "Linda",
+    "Kabanana",
+    "Kafue",
+    "Chongwe",
+    "Mumbwa",
+    "Mazabuka",
+    "Monze",
+    "Chipata",
+    "Kasama",
+    "Solwezi",
+    "Ndola",
+    "Kitwe",
+    "Chingola",
+    "Mufulira",
+    "Kalulushi",
+    "Kabwe",
+    "Kapiri Mposhi",
+    "Serenje",
+    "Mkushi",
+    "Petauke",
+    "Katete",
+    "Lundazi",
+    "Mansa",
+    "Kawambwa",
+    "Nchelenge",
+    "Chililabombwe",
+    "Livingstone",
 ];
 // Zambian phone prefixes
 const phonePrefix = ["097", "096", "095", "077", "076", "075"];
 // Relationships for witness
 const relationships = [
-    "Spouse", "Brother", "Sister", "Father", "Mother", "Son", "Daughter",
-    "Uncle", "Aunt", "Cousin", "Friend", "Neighbor", "Business Partner"
+    "Spouse",
+    "Brother",
+    "Sister",
+    "Father",
+    "Mother",
+    "Son",
+    "Daughter",
+    "Uncle",
+    "Aunt",
+    "Cousin",
+    "Friend",
+    "Neighbor",
+    "Business Partner",
 ];
 // Plot sizes
 const plotSizes = [
-    "20x30m", "25x30m", "30x30m", "30x40m", "40x40m", "50x50m",
-    "20x40m", "25x40m", "35x35m", "45x45m", "60x60m", "100x100m"
+    "20mx30m",
+    "25mx30m",
+    "30mx30m",
+    "30mx40m",
+    "40mx40m",
+    "50x50m",
+    "20mx40m",
+    "25mx40m",
+    "35mx35m",
+    "45mx45m",
+    "60mx60m",
+    "100mx100m",
 ];
 // Document types
 const documentTypes = [
-    "National Registration Card", "Passport", "Driver's License", "Voter's Card"
+    "National Registration Card",
+    "Passport",
+    "Driver's License",
+    "Voter's Card",
 ];
 const contractTypes = [
-    "Sale Agreement", "Lease Agreement", "Purchase Contract", "Transfer Document"
+    "Sale Agreement",
+    "Lease Agreement",
+    "Purchase Contract",
+    "Transfer Document",
 ];
 const otherDocTypes = [
-    "Survey Report", "Site Plan", "Building Permit", "Title Deed", "Land Certificate"
+    "Survey Report",
+    "Site Plan",
+    "Building Permit",
+    "Title Deed",
+    "Land Certificate",
 ];
 // Helper functions
 function getRandomItem(array) {
@@ -66,7 +241,7 @@ function getRandomItem(array) {
 function generateNRC() {
     const digits = Math.floor(Math.random() * 900000) + 100000;
     const suffix = Math.floor(Math.random() * 99) + 1;
-    return `${digits}/${suffix.toString().padStart(2, '0')}/1`;
+    return `${digits}/${suffix.toString().padStart(2, "0")}/1`;
 }
 function generatePhone() {
     const prefix = getRandomItem(phonePrefix);
@@ -74,16 +249,31 @@ function generatePhone() {
     return `${prefix}${number}`;
 }
 function generateEmail(name) {
-    const cleanName = name.toLowerCase().replace(/\s+/g, '.');
-    const domains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "zamtel.zm"];
+    const cleanName = name.toLowerCase().replace(/\s+/g, ".");
+    const domains = [
+        "gmail.com",
+        "yahoo.com",
+        "outlook.com",
+        "hotmail.com",
+        "zamtel.zm",
+    ];
     return `${cleanName}@${getRandomItem(domains)}`;
 }
 function generateAddress(location) {
     const houseNumbers = Math.floor(Math.random() * 9999) + 1;
     const streets = [
-        "Independence Avenue", "Cairo Road", "Church Road", "Nationalist Road",
-        "Great East Road", "Kafue Road", "Mumbwa Road", "Chongwe Road",
-        "University Road", "Thabo Mbeki Road", "Kenneth Kaunda Road", "Freedom Way"
+        "Independence Avenue",
+        "Cairo Road",
+        "Church Road",
+        "Nationalist Road",
+        "Great East Road",
+        "Kafue Road",
+        "Mumbwa Road",
+        "Chongwe Road",
+        "University Road",
+        "Thabo Mbeki Road",
+        "Kenneth Kaunda Road",
+        "Freedom Way",
     ];
     return `${houseNumbers} ${getRandomItem(streets)}, ${location}, Lusaka`;
 }
@@ -91,7 +281,7 @@ function generatePlotNumber() {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const letter = letters[Math.floor(Math.random() * letters.length)];
     const number = Math.floor(Math.random() * 9999) + 1;
-    return `${letter}${number.toString().padStart(4, '0')}`;
+    return `${letter}${number.toString().padStart(4, "0")}`;
 }
 function generateCost() {
     // Costs in ZMW (Zambian Kwacha) - realistic property prices
@@ -105,11 +295,28 @@ function generateAmountPaid(totalCost) {
 }
 function generateSiteName() {
     const siteNames = [
-        "Golden Valley Estate", "Meanwood Estate", "Silverest Gardens", "Palm Grove Estate",
-        "Sunset Gardens", "Green Valley", "Royal Gardens", "Paradise Estate", "Crown Estate",
-        "Diamond Park", "Emerald Gardens", "Ruby Estate", "Sapphire Gardens", "Pearl Estate",
-        "Highland Park", "Valley View Estate", "Hill Crest Gardens", "River View Estate",
-        "Garden City", "New Town Estate", "Executive Lodge", "Presidential Estate"
+        "Golden Valley Estate",
+        "Meanwood Estate",
+        "Silverest Gardens",
+        "Palm Grove Estate",
+        "Sunset Gardens",
+        "Green Valley",
+        "Royal Gardens",
+        "Paradise Estate",
+        "Crown Estate",
+        "Diamond Park",
+        "Emerald Gardens",
+        "Ruby Estate",
+        "Sapphire Gardens",
+        "Pearl Estate",
+        "Highland Park",
+        "Valley View Estate",
+        "Hill Crest Gardens",
+        "River View Estate",
+        "Garden City",
+        "New Town Estate",
+        "Executive Lodge",
+        "Presidential Estate",
     ];
     return getRandomItem(siteNames);
 }
@@ -166,11 +373,19 @@ try {
     console.log("✅ Successfully seeded database with 200 Zambian records!");
     console.log("📊 Database contains:");
     // Get counts to verify
-    const clientCount = db.prepare("SELECT COUNT(*) as count FROM clients").get();
+    const clientCount = db
+        .prepare("SELECT COUNT(*) as count FROM clients")
+        .get();
     const plotCount = db.prepare("SELECT COUNT(*) as count FROM plots").get();
-    const salesCount = db.prepare("SELECT COUNT(*) as count FROM sales").get();
-    const witnessCount = db.prepare("SELECT COUNT(*) as count FROM witness").get();
-    const documentsCount = db.prepare("SELECT COUNT(*) as count FROM documents").get();
+    const salesCount = db
+        .prepare("SELECT COUNT(*) as count FROM sales")
+        .get();
+    const witnessCount = db
+        .prepare("SELECT COUNT(*) as count FROM witness")
+        .get();
+    const documentsCount = db
+        .prepare("SELECT COUNT(*) as count FROM documents")
+        .get();
     console.log(`   - ${clientCount.count} clients`);
     console.log(`   - ${plotCount.count} plots`);
     console.log(`   - ${salesCount.count} sales records`);

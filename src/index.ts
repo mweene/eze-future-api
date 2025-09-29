@@ -1,9 +1,10 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { json, urlencoded } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import router from "./router/index.js";
+import { nonExistentRoutes } from "./controllers/index.js";
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -15,6 +16,8 @@ app.use(morgan("dev"));
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(router);
+
+app.use(nonExistentRoutes);
 
 app.listen(port, () => {
   console.log(`server is listening on port: http://localhost:${port}`);
