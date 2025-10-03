@@ -76,7 +76,8 @@ function getAllClients(
         plots.site_name,
         sales.total_cost,
         sales.amount_paid,
-        sales.balance
+        sales.balance,
+        sales.payment_status
         FROM clients
         LEFT JOIN plots ON clients.id = plots.client_id
         LEFT JOIN sales ON clients.id = sales.client_id LIMIT ? OFFSET ?;
@@ -103,20 +104,15 @@ function getAllClients(
 
 function getAllFilteredClients(req: Request, res: Response) {
   try {
-    const filterString = req.query.filter;
-    if (!filterString) {
-      res.status(500).json({ error: "filter cannot be empty" });
-    } else {
-      const filterClients = db.prepare(
-        "SELECT * FROM plots WHERE site_name = ?",
-      );
-      const clients = filterClients.all(filterString);
-      res.status(200).json(clients);
+    const status = req.query.status;
+    if (status) {
+      const clients = db
+        .prepare("SELECT * FROM sales WHERE payment_status = ?")
+        .all(status);
+      res.status(200).json({ data: clients });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: error.message, message: "you fool this is wrong" });
+    res.status(500).json({ error: error.message });
   }
 }
 
@@ -134,7 +130,7 @@ function createClient(req: Request, res: Response) {
     "INSERT INTO plots (client_id, plot_number, plot_size, location, site_name, site_plan_link) VALUES (?,?,?,?,?,?)",
   );
   const insertSalesDetails = db.prepare(
-    "INSERT INTO sales (client_id, total_cost, amount_paid, balance) VALUES (?,?,?,?)",
+    "INSERT INTO sales (client_id, total_cost, amount_paid, balance, payment_status) VALUES (?,?,?,?,?)",
   );
   const insertWitnessDetails = db.prepare(
     "INSERT INTO witness (client_id, name, nrc, phone, address, relationship) VALUES (?,?,?,?,?,?)",
@@ -157,7 +153,21 @@ function createClient(req: Request, res: Response) {
           site_name,
           site_plan_link,
         );
-        insertSalesDetails.run(client_id, total_cost, amount_paid, balance);
+        // Calculate payment status
+        let payment_status = "pending";
+        if (balance === 0) {
+          payment_status = "paid";
+        } else if (amount_paid > 0) {
+          payment_status = "partial";
+        }
+
+        insertSalesDetails.run(
+          client_id,
+          total_cost,
+          amount_paid,
+          balance,
+          payment_status,
+        );
         insertWitnessDetails.run(
           client_id,
           req.body.witness.name,
@@ -192,7 +202,7 @@ function updateClient(req: Request, res: Response) {
       "UPDATE plots SET plot_number=?, plot_size=?, location=?, site_name=?, site_plan_link=? WHERE client_id = ?",
     );
     const updateSalesDetails = db.prepare(
-      "UPDATE sales SET total_cost=?, amount_paid=?, balance=? WHERE client_id=?",
+      "UPDATE sales SET total_cost=?, amount_paid=?, balance=?, payment_status=? WHERE client_id=?",
     );
     const updateWitnessDetails = db.prepare(
       "UPDATE witness SET name=?, nrc=?, phone=?, address=?, relationship=? WHERE client_id=?",
@@ -221,7 +231,21 @@ function updateClient(req: Request, res: Response) {
           site_plan_link,
           client_id,
         );
-        updateSalesDetails.run(total_cost, amount_paid, balance, client_id);
+        // Calculate payment status
+        let payment_status = "pending";
+        if (balance === 0) {
+          payment_status = "paid";
+        } else if (amount_paid > 0) {
+          payment_status = "partial";
+        }
+
+        updateSalesDetails.run(
+          total_cost,
+          amount_paid,
+          balance,
+          payment_status,
+          client_id,
+        );
         updateWitnessDetails.run(
           req.body.witness.name,
           req.body.witness.nrc,
@@ -256,6 +280,124 @@ function deleteClient(req: Request, res: Response) {
   }
 }
 
+function getPaymentStatusStats(req: Request, res: Response) {
+  try {
+    // Get overall payment statistics
+    const paymentStats = db
+      .prepare(
+        `
+        SELECT
+          payment_status,
+          COUNT(*) as count,
+          ROUND(AVG(total_cost), 2) as avg_cost,
+          ROUND(AVG(amount_paid), 2) as avg_paid,
+          ROUND(AVG(balance), 2) as avg_balance,
+          ROUND(SUM(total_cost), 2) as total_cost,
+          ROUND(SUM(amount_paid), 2) as total_paid,
+          ROUND(SUM(balance), 2) as total_balance
+        FROM sales
+        GROUP BY payment_status
+        ORDER BY payment_status
+      `,
+      )
+      .all();
+
+    // Get total counts
+    const totalStats = db
+      .prepare(
+        `
+        SELECT
+          COUNT(*) as total_clients,
+          ROUND(SUM(total_cost), 2) as total_revenue,
+          ROUND(SUM(amount_paid), 2) as total_collected,
+          ROUND(SUM(balance), 2) as total_outstanding
+        FROM sales
+      `,
+      )
+      .get();
+
+    res.status(200).json({
+      payment_breakdown: paymentStats,
+      overall_stats: totalStats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Payment stats error:", error);
+    res.status(500).json({
+      error: "Failed to retrieve payment statistics",
+      details: error.message,
+    });
+  }
+}
+
+function getClientsByPaymentStatus(req: Request, res: Response) {
+  try {
+    const { status } = req.params; // 'paid', 'partial', 'pending', 'overdue'
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
+    // Validate payment status
+    const validStatuses = ["paid", "partial", "pending", "overdue"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: "Invalid payment status",
+        valid_statuses: validStatuses,
+      });
+    }
+
+    // Get count for pagination
+    const countResult = db
+      .prepare("SELECT COUNT(*) as total FROM sales WHERE payment_status = ?")
+      .get(status) as { total: number };
+
+    const totalPages = Math.ceil(countResult.total / limit);
+
+    // Get clients with specific payment status
+    const query = `
+      SELECT
+        clients.id as client_id,
+        clients.name,
+        clients.phone,
+        clients.email,
+        plots.site_name,
+        plots.plot_size,
+        sales.total_cost,
+        sales.amount_paid,
+        sales.balance,
+        sales.payment_status,
+        sales.created_at as sale_date
+      FROM clients
+      JOIN sales ON clients.id = sales.client_id
+      LEFT JOIN plots ON clients.id = plots.client_id
+      WHERE sales.payment_status = ?
+      ORDER BY sales.balance DESC, clients.name
+      LIMIT ? OFFSET ?
+    `;
+
+    const clients = db.prepare(query).all(status, limit, offset);
+
+    res.status(200).json({
+      data: clients,
+      pagination: {
+        total_clients: countResult.total,
+        total_pages: totalPages,
+        current_page: page,
+        clients_per_page: limit,
+        next_page: page < totalPages ? page + 1 : null,
+        prev_page: page > 1 ? page - 1 : null,
+      },
+      payment_status: status,
+    });
+  } catch (error) {
+    console.error("Payment status filter error:", error);
+    res.status(500).json({
+      error: "Failed to filter clients by payment status",
+      details: error.message,
+    });
+  }
+}
+
 function nonExistentRoutes(req: Request, res: Response, next: NextFunction) {
   res.status(404).json({
     success: false,
@@ -272,5 +414,7 @@ export {
   createClient,
   updateClient,
   deleteClient,
+  getPaymentStatusStats,
+  getClientsByPaymentStatus,
   nonExistentRoutes,
 };

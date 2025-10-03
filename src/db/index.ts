@@ -44,6 +44,7 @@ db.transaction(() => {
     total_cost REAL NOT NULL,
     amount_paid REAL NOT NULL DEFAULT 0,
     balance REAL NOT NULL DEFAULT 0,
+    payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'partial', 'paid', 'overdue')),
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE

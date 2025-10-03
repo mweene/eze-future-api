@@ -304,10 +304,65 @@ function generateCost(): number {
   return baseCost;
 }
 
-function generateAmountPaid(totalCost: number): number {
-  // Random percentage paid between 10% and 90%
-  const percentage = Math.random() * 0.8 + 0.1;
-  return Math.floor(totalCost * percentage);
+function generatePaymentData(totalCost: number): {
+  amountPaid: number;
+  balance: number;
+  status: string;
+} {
+  const scenarios = [
+    { type: "paid", weight: 30 }, // 30% fully paid
+    { type: "partial", weight: 40 }, // 40% partial payment
+    { type: "pending", weight: 20 }, // 20% no payment yet
+    { type: "overdue", weight: 10 }, // 10% overdue payments
+  ];
+
+  // Weighted random selection
+  const random = Math.random() * 100;
+  let cumulative = 0;
+  let selectedType = "pending";
+
+  for (const scenario of scenarios) {
+    cumulative += scenario.weight;
+    if (random <= cumulative) {
+      selectedType = scenario.type;
+      break;
+    }
+  }
+
+  let amountPaid: number;
+  let balance: number;
+  let status: string;
+
+  switch (selectedType) {
+    case "paid":
+      amountPaid = totalCost;
+      balance = 0;
+      status = "paid";
+      break;
+    case "partial":
+      const partialPercentage = Math.random() * 0.7 + 0.2; // 20% to 90% paid
+      amountPaid = Math.floor(totalCost * partialPercentage);
+      balance = totalCost - amountPaid;
+      status = "partial";
+      break;
+    case "pending":
+      amountPaid = 0;
+      balance = totalCost;
+      status = "pending";
+      break;
+    case "overdue":
+      const overduePercentage = Math.random() * 0.3; // 0% to 30% paid
+      amountPaid = Math.floor(totalCost * overduePercentage);
+      balance = totalCost - amountPaid;
+      status = "overdue";
+      break;
+    default:
+      amountPaid = 0;
+      balance = totalCost;
+      status = "pending";
+  }
+
+  return { amountPaid, balance, status };
 }
 
 function generateSiteName(): string {
@@ -352,8 +407,8 @@ const insertPlot = db.prepare(`
 `);
 
 const insertSale = db.prepare(`
-  INSERT INTO sales (client_id, total_cost, amount_paid, balance)
-  VALUES (?, ?, ?, ?)
+  INSERT INTO sales (client_id, total_cost, amount_paid, balance, payment_status)
+  VALUES (?, ?, ?, ?, ?)
 `);
 
 const insertWitness = db.prepare(`
@@ -395,10 +450,15 @@ const seedData = db.transaction(() => {
 
     // Insert sales
     const totalCost = generateCost();
-    const amountPaid = generateAmountPaid(totalCost);
-    const balance = totalCost - amountPaid;
+    const paymentData = generatePaymentData(totalCost);
 
-    insertSale.run(clientId, totalCost, amountPaid, balance);
+    insertSale.run(
+      clientId,
+      totalCost,
+      paymentData.amountPaid,
+      paymentData.balance,
+      paymentData.status,
+    );
 
     // Insert witness
     const witnessName = getRandomItem(zambianNames);
@@ -453,6 +513,33 @@ try {
   console.log(`   - ${salesCount.count} sales records`);
   console.log(`   - ${witnessCount.count} witness records`);
   console.log(`   - ${documentsCount.count} document records`);
+
+  // Show payment status breakdown
+  const paymentStats = db
+    .prepare(
+      `
+    SELECT payment_status, COUNT(*) as count,
+           ROUND(AVG(total_cost), 2) as avg_cost,
+           ROUND(AVG(amount_paid), 2) as avg_paid,
+           ROUND(AVG(balance), 2) as avg_balance
+    FROM sales
+    GROUP BY payment_status
+  `,
+    )
+    .all() as Array<{
+    payment_status: string;
+    count: number;
+    avg_cost: number;
+    avg_paid: number;
+    avg_balance: number;
+  }>;
+
+  console.log("\n📈 Payment Status Breakdown:");
+  paymentStats.forEach((stat) => {
+    console.log(
+      `   - ${stat.payment_status}: ${stat.count} clients (Avg Cost: K${stat.avg_cost}, Avg Paid: K${stat.avg_paid}, Avg Balance: K${stat.avg_balance})`,
+    );
+  });
 } catch (error) {
   console.error("❌ Error seeding database:", error);
   process.exit(1);
