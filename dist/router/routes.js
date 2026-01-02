@@ -19,4 +19,5 @@ router.get("/api/sales", controllers.getAllSalesRecords);
 router.post("/api/sales", controllers.createSalesRecord);
 //dashboard data
 router.get("/api/dashboard", controllers.getDashboardData);
+router.post("/api/dashboard", controllers.clientBulkCreate);
 export default router;

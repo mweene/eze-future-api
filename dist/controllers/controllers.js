@@ -159,3 +159,25 @@ export const getDashboardData = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+//create a new client from the dashboard data
+export const clientBulkCreate = (req, res) => {
+    try {
+        const { name, nrc, phone, witness_name, witness_phone, relationship, site_id, plot_size, plot_number, status, total, paid, } = req.body;
+        const clientStmt = db.prepare(`INSERT INTO clients(name, phone, nrc) VALUES (?,?,?)`);
+        const plotStmt = db.prepare(`INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`);
+        const witnessStmt = db.prepare(`INSERT INTO witness(client_id, name, phone, relationship) VALUES(?,?,?,?)`);
+        const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid) VALUES (?,?,?,?)`);
+        const insertTransaction = db.transaction(() => {
+            const client_id = clientStmt.run(name, phone, nrc).lastInsertRowid;
+            const plot_id = plotStmt.run(site_id, plot_size, plot_number, status).lastInsertRowid;
+            witnessStmt.run(client_id, witness_name, witness_phone, relationship);
+            salesStmt.run(client_id, plot_id, total, paid);
+            return client_id;
+        });
+        const client_id = insertTransaction();
+        res.status(201).json({ message: "Client created successfully", client_id });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
