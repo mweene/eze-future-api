@@ -70,11 +70,11 @@ export const getAllClients = (req: Request, res: Response) => {
 
 export const createClient = (req: Request, res: Response) => {
   try {
-    const { name, phone, nrc } = req.body;
+    const { name, phone, nrc, address } = req.body;
     const stmt = db.prepare(
-      `INSERT INTO clients(name, phone, nrc) VALUES (?,?,?)`,
+      `INSERT INTO clients(name, phone, nrc, address) VALUES (?,?,?,?)`,
     );
-    const result = stmt.run(name, phone, nrc).lastInsertRowid;
+    const result = stmt.run(name, phone, nrc, address).lastInsertRowid;
 
     res.status(201).json({ data: `New record created with id: ${result}` });
   } catch (err) {
@@ -85,13 +85,13 @@ export const createClient = (req: Request, res: Response) => {
 export const updateClient = (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const { name, phone, nrc } = req.body;
+    const { name, phone, nrc, address } = req.body;
     const stmt = db.prepare(
       `UPDATE clients
-       SET name = ?, phone = ?, nrc = ?
+       SET name = ?, phone = ?, nrc = ?, address = ?
        WHERE id = ?`,
     );
-    const changes = stmt.run(name, phone, nrc, id).changes;
+    const changes = stmt.run(name, phone, nrc, address, id).changes;
 
     res.status(201).json({ data: `updated record with id: ${id}, ${changes}` });
   } catch (err) {
@@ -203,7 +203,7 @@ export const clientBulkCreate = (req: Request, res: Response) => {
       relationship,
       site_id,
       plot_size,
-      plot_number,
+      plot_no,
       status,
       total,
       paid,
@@ -227,7 +227,7 @@ export const clientBulkCreate = (req: Request, res: Response) => {
       const plot_id = plotStmt.run(
         site_id,
         plot_size,
-        plot_number,
+        plot_no,
         status,
       ).lastInsertRowid;
       witnessStmt.run(client_id, witness_name, witness_phone, relationship);

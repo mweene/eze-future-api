@@ -56,9 +56,9 @@ export const getAllClients = (req, res) => {
 };
 export const createClient = (req, res) => {
     try {
-        const { name, phone, nrc } = req.body;
-        const stmt = db.prepare(`INSERT INTO clients(name, phone, nrc) VALUES (?,?,?)`);
-        const result = stmt.run(name, phone, nrc).lastInsertRowid;
+        const { name, phone, nrc, address } = req.body;
+        const stmt = db.prepare(`INSERT INTO clients(name, phone, nrc, address) VALUES (?,?,?,?)`);
+        const result = stmt.run(name, phone, nrc, address).lastInsertRowid;
         res.status(201).json({ data: `New record created with id: ${result}` });
     }
     catch (err) {
@@ -68,11 +68,11 @@ export const createClient = (req, res) => {
 export const updateClient = (req, res) => {
     try {
         const id = req.params.id;
-        const { name, phone, nrc } = req.body;
+        const { name, phone, nrc, address } = req.body;
         const stmt = db.prepare(`UPDATE clients
-       SET name = ?, phone = ?, nrc = ?
+       SET name = ?, phone = ?, nrc = ?, address = ?
        WHERE id = ?`);
-        const changes = stmt.run(name, phone, nrc, id).changes;
+        const changes = stmt.run(name, phone, nrc, address, id).changes;
         res.status(201).json({ data: `updated record with id: ${id}, ${changes}` });
     }
     catch (err) {
@@ -162,14 +162,14 @@ export const getDashboardData = (req, res) => {
 //create a new client from the dashboard data
 export const clientBulkCreate = (req, res) => {
     try {
-        const { name, nrc, phone, witness_name, witness_phone, relationship, site_id, plot_size, plot_number, status, total, paid, } = req.body;
+        const { name, nrc, phone, witness_name, witness_phone, relationship, site_id, plot_size, plot_no, status, total, paid, } = req.body;
         const clientStmt = db.prepare(`INSERT INTO clients(name, phone, nrc) VALUES (?,?,?)`);
         const plotStmt = db.prepare(`INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`);
         const witnessStmt = db.prepare(`INSERT INTO witness(client_id, name, phone, relationship) VALUES(?,?,?,?)`);
         const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid) VALUES (?,?,?,?)`);
         const insertTransaction = db.transaction(() => {
             const client_id = clientStmt.run(name, phone, nrc).lastInsertRowid;
-            const plot_id = plotStmt.run(site_id, plot_size, plot_number, status).lastInsertRowid;
+            const plot_id = plotStmt.run(site_id, plot_size, plot_no, status).lastInsertRowid;
             witnessStmt.run(client_id, witness_name, witness_phone, relationship);
             salesStmt.run(client_id, plot_id, total, paid);
             return client_id;
