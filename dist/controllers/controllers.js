@@ -1,3 +1,4 @@
+import { validationResult } from "express-validator";
 import db from "../db/db.js";
 //sellers controllers
 export const getAllSellers = (req, res) => {
@@ -12,6 +13,9 @@ export const getAllSellers = (req, res) => {
 };
 export const createSeller = (req, res) => {
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty())
+            return res.status(400).json({ errors: errors.array() });
         const { name, phone, total, paid } = req.body;
         const stmt = db.prepare(`INSERT INTO sellers(name, phone, total, paid) VALUES (?,?,?,?)`);
         const result = stmt.run(name, phone, total, paid).lastInsertRowid;
@@ -56,9 +60,10 @@ export const getAllClients = (req, res) => {
 };
 export const createClient = (req, res) => {
     try {
-        const { name, phone, nrc, address } = req.body;
-        const stmt = db.prepare(`INSERT INTO clients(name, phone, nrc, address) VALUES (?,?,?,?)`);
-        const result = stmt.run(name, phone, nrc, address).lastInsertRowid;
+        const { name, phone, nrc, address, is_allocated, is_authorized } = req.body;
+        const stmt = db.prepare(`INSERT INTO clients(name, phone, nrc, address, is_allocated, is_authorized)
+      VALUES (?,?,?,?,?,?)`);
+        const result = stmt.run(name, phone, nrc, address, is_allocated, is_authorized).lastInsertRowid;
         res.status(201).json({ data: `New record created with id: ${result}` });
     }
     catch (err) {
@@ -68,12 +73,12 @@ export const createClient = (req, res) => {
 export const updateClient = (req, res) => {
     try {
         const id = req.params.id;
-        const { name, phone, nrc, address } = req.body;
+        const { name, phone, nrc, address, is_allocated, is_authorized } = req.body;
         const stmt = db.prepare(`UPDATE clients
-       SET name = ?, phone = ?, nrc = ?, address = ?
+       SET name = ?, phone = ?, nrc = ?, address = ? , is_allocated = ?, is_authorized = ?
        WHERE id = ?`);
-        const changes = stmt.run(name, phone, nrc, address, id).changes;
-        res.status(201).json({ data: `updated record with id: ${id}, ${changes}` });
+        const changes = stmt.run(name, phone, nrc, address, is_allocated, is_authorized, id).changes;
+        res.status(200).json({ data: `updated record with id: ${id}, ${changes}` });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -145,7 +150,7 @@ export const getDashboardData = (req, res) => {
           c.phone AS client_phone,
           s.name AS site_name,
           p.size AS plot_size,
-          p.plot_no AS plot_number,
+          p.plot_no AS plot_no,
           p.status AS status
       FROM sales sa
       JOIN clients c ON sa.client_id = c.id
@@ -159,19 +164,44 @@ export const getDashboardData = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-//create a new client from the dashboard data
+// create a new client from the dashboard data
 export const clientBulkCreate = (req, res) => {
     try {
-        const { name, nrc, phone, witness_name, witness_phone, relationship, site_id, plot_size, plot_no, status, total, paid, } = req.body;
-        const clientStmt = db.prepare(`INSERT INTO clients(name, phone, nrc) VALUES (?,?,?)`);
+        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, witness_name, witness_nrc, witness_phone, relationship, letter_of_sale, authorization_letter, nrc_url, receipts, // currently unused
+        site_name, plot_size, plot_no, total_amount, amount_paid, balance, // currently unused
+        sales_date, } = req.body;
+        // convert the boolean value into 0 or 1
+        const is_allocated = checkBool(allocated);
+        const is_authorized = checkBool(authorized);
+        const siteIDStmt = db.prepare("SELECT id FROM sites WHERE name = ?");
+        const clientStmt = db.prepare(`INSERT INTO
+        clients (
+          name, phone, nrc, address, is_allocated,
+          is_authorized, allocated_at, authorized_at
+        )
+      VALUES (?,?,?,?,?,?,?,?)`);
         const plotStmt = db.prepare(`INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`);
-        const witnessStmt = db.prepare(`INSERT INTO witness(client_id, name, phone, relationship) VALUES(?,?,?,?)`);
-        const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid) VALUES (?,?,?,?)`);
+        const witnessStmt = db.prepare(`INSERT INTO witness(client_id, name, nrc, phone, relationship) VALUES(?,?,?,?,?)`);
+        const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid, created_at) VALUES (?,?,?,?,?)`);
+        const documentsStmt = db.prepare(`INSERT INTO documents (client_id, letter_of_sale_url, authorization_letter_url, nrc_url)
+      VALUES (?,?,?,?)`);
         const insertTransaction = db.transaction(() => {
-            const client_id = clientStmt.run(name, phone, nrc).lastInsertRowid;
-            const plot_id = plotStmt.run(site_id, plot_size, plot_no, status).lastInsertRowid;
-            witnessStmt.run(client_id, witness_name, witness_phone, relationship);
-            salesStmt.run(client_id, plot_id, total, paid);
+            //get the site_id before the transaction starts
+            const siteRow = siteIDStmt.get(site_name);
+            if (!siteRow)
+                throw new Error("Site not found");
+            const site_id = siteRow.id;
+            //check for errors
+            const errors = validationResult(req);
+            if (!errors.isEmpty())
+                return res.status(400).json({ errors: errors.array() });
+            const client_id = clientStmt.run(name, phone, nrc, address, is_allocated, is_authorized, allocation_date, authorization_date).lastInsertRowid;
+            const plot_id = plotStmt.run(site_id, plot_size, plot_no, "sold").lastInsertRowid;
+            witnessStmt.run(client_id, witness_name, witness_nrc, // ✅ Correct order
+            witness_phone, // ✅ Correct order
+            relationship);
+            salesStmt.run(client_id, plot_id, total_amount, amount_paid, sales_date);
+            documentsStmt.run(client_id, letter_of_sale, authorization_letter, nrc_url);
             return client_id;
         });
         const client_id = insertTransaction();
@@ -181,3 +211,7 @@ export const clientBulkCreate = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+// check if value is true or false
+function checkBool(value) {
+    return value ? 1 : 0;
+}

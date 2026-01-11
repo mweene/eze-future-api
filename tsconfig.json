@@ -5,14 +5,14 @@
     "rootDir": "./src",
     "outDir": "./dist",
 
-    "module": "ESNext",
+    "module": "esnext",
     "moduleResolution": "node",
     "target": "es6",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "lib": ["es2015"],
     "moduleDetection": "force",
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
 }
