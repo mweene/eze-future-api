@@ -34,6 +34,10 @@ export const createSeller = (req: Request, res: Response) => {
 //site controllers
 export const createSite = (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
     const { seller_id, name, size, location, number_of_plots } = req.body;
     const stmt = db.prepare(
       `INSERT INTO sites(seller_id, name, size, location, number_of_plots) VALUES (?,?,?,?,?)`,
@@ -75,6 +79,10 @@ export const getAllClients = (req: Request, res: Response) => {
 
 export const createClient = (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
     const { name, phone, nrc, address, is_allocated, is_authorized } = req.body;
     const stmt = db.prepare(
       `INSERT INTO clients(name, phone, nrc, address, is_allocated, is_authorized)
@@ -97,7 +105,7 @@ export const createClient = (req: Request, res: Response) => {
 
 export const updateClient = (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const id = Number(req.params.id);
     const { name, phone, nrc, address, is_allocated, is_authorized } = req.body;
     const stmt = db.prepare(
       `UPDATE clients
@@ -133,6 +141,10 @@ export const getAllPlots = (req: Request, res: Response) => {
 
 export const createPlot = (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
     const { site_id, size, plot_no, status } = req.body;
     const stmt = db.prepare(
       `INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`,
@@ -158,11 +170,21 @@ export const getAllSalesRecords = (req: Request, res: Response) => {
 
 export const createSalesRecord = (req: Request, res: Response) => {
   try {
-    const { client_id, plot_id, total, paid } = req.body;
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
+    const { client_id, plot_id, total, paid, balance } = req.body;
     const stmt = db.prepare(
-      `INSERT INTO sales(client_id, plot_id, total, paid) VALUES (?,?,?,?)`,
+      `INSERT INTO sales(client_id, plot_id, total, paid, balance) VALUES (?,?,?,?,?)`,
     );
-    const result = stmt.run(client_id, plot_id, total, paid).lastInsertRowid;
+    const result = stmt.run(
+      client_id,
+      plot_id,
+      total,
+      paid,
+      balance,
+    ).lastInsertRowid;
 
     res.status(201).json({ data: `New record created with id: ${result}` });
   } catch (err) {
@@ -173,6 +195,10 @@ export const createSalesRecord = (req: Request, res: Response) => {
 //witness controllers
 export const createWitness = (req: Request, res: Response) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
     const { witness_name, witness_phone, relationship } = req.body;
     const stmt = db.prepare(
       `INSERT INTO witness(name, phone, relationship) VALUES(?,?,?)`,

@@ -6,7 +6,23 @@ const router = Router();
 
 //client routes
 router.get("/api/clients", controllers.getAllClients);
-router.post("/api/clients", controllers.createClient);
+router.post(
+  "/api/clients",
+  [
+    body("name")
+      .notEmpty()
+      .toLowerCase()
+      .trim()
+      .withMessage("client name is required")
+      .escape(),
+    body("phone").notEmpty().trim().escape(),
+    body("nrc").notEmpty().withMessage("NRC number is required"),
+    body("address").optional(),
+    body("is_allocated").optional(),
+    body("is_authorized").optional(),
+  ],
+  controllers.createClient,
+);
 router.put("/api/clients/:id", controllers.updateClient);
 
 //seller routes
@@ -34,17 +50,78 @@ router.post(
 
 //sites routes
 router.get("/api/sites", controllers.getAllSites);
-router.post("/api/sites", controllers.createSite);
+router.post(
+  "/api/sites",
+  [
+    body("seller_id")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("seller id is required")
+      .escape(),
+    body("name")
+      .notEmpty()
+      .trim()
+      .withMessage("site name is required")
+      .escape(),
+    body("size")
+      .notEmpty()
+      .trim()
+      .withMessage("size of the site is required")
+      .escape(),
+    body("location").notEmpty().trim().withMessage("site location is required"),
+    body("number_of_plots")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("number of plots is required"),
+  ],
+  controllers.createSite,
+);
 
 //plots routes
 router.get("/api/plots", controllers.getAllPlots);
-router.post("/api/plots", controllers.createPlot);
+router.post(
+  "/api/plots",
+  [
+    body("site_id")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("site id is required")
+      .escape(),
+    body("size").notEmpty().withMessage("plot size is required").escape(),
+    body("plot_no")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("plot number is required")
+      .escape(),
+    body("status").optional(),
+  ],
+  controllers.createPlot,
+);
 
 //sales routes
 router.get("/api/sales", controllers.getAllSalesRecords);
-router.post("/api/sales", controllers.createSalesRecord);
+router.post(
+  "/api/sales",
+  [
+    body("client_id")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("client id is required"),
+    body("plot_id").notEmpty().isNumeric().withMessage("plot id is required"),
+    body("total")
+      .notEmpty()
+      .isNumeric()
+      .withMessage("total amount is required"),
+    body("paid").notEmpty().isNumeric().withMessage("amount paid is required"),
+    body("balance")
+      .optional()
+      .isNumeric()
+      .withMessage("balance must be a number"),
+  ],
+  controllers.createSalesRecord,
+);
 
-//dashboard data
+//dashboard data and validation
 router.get("/api/dashboard", controllers.getDashboardData);
 router.post(
   "/api/dashboard",
