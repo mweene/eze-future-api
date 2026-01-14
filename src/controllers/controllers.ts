@@ -174,17 +174,11 @@ export const createSalesRecord = (req: Request, res: Response) => {
     if (!errors.isEmpty())
       return res.status(400).json({ errors: errors.array() });
 
-    const { client_id, plot_id, total, paid, balance } = req.body;
+    const { client_id, plot_id, total, paid } = req.body;
     const stmt = db.prepare(
-      `INSERT INTO sales(client_id, plot_id, total, paid, balance) VALUES (?,?,?,?,?)`,
+      `INSERT INTO sales(client_id, plot_id, total, paid) VALUES (?,?,?,?)`,
     );
-    const result = stmt.run(
-      client_id,
-      plot_id,
-      total,
-      paid,
-      balance,
-    ).lastInsertRowid;
+    const result = stmt.run(client_id, plot_id, total, paid).lastInsertRowid;
 
     res.status(201).json({ data: `New record created with id: ${result}` });
   } catch (err) {

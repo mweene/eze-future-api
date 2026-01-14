@@ -94,7 +94,7 @@ router.post("/api/sales", [
         .isNumeric()
         .withMessage("balance must be a number"),
 ], controllers.createSalesRecord);
-//dashboard data
+//dashboard data and validation
 router.get("/api/dashboard", controllers.getDashboardData);
 router.post("/api/dashboard", [
     body("name").notEmpty().trim().withMessage("name is required"),
@@ -124,7 +124,6 @@ router.post("/api/dashboard", [
         .notEmpty()
         .trim()
         .withMessage("amount paid is required"),
-    body("balance").optional().trim(),
     body("sales_date").notEmpty().trim().withMessage("sales date is required"),
 ], controllers.clientBulkCreate);
 export default router;

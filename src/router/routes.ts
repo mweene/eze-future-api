@@ -156,7 +156,6 @@ router.post(
       .notEmpty()
       .trim()
       .withMessage("amount paid is required"),
-    body("balance").optional().trim(),
     body("sales_date").notEmpty().trim().withMessage("sales date is required"),
   ],
   controllers.clientBulkCreate,
