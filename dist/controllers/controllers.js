@@ -3,7 +3,7 @@ import db from "../db/db.js";
 //sellers controllers
 export const getAllSellers = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM sellers`);
+        const stmt = db.prepare(`SELECT * FROM sellers ORDER BY created_at DESC`);
         const sellers = stmt.all();
         res.status(200).json({ pagination: {}, data: sellers });
     }
@@ -42,18 +42,36 @@ export const createSite = (req, res) => {
 };
 export const getAllSites = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM sites`);
-        const sites = stmt.all();
-        res.status(200).json({ pagination: {}, data: sites });
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db.prepare(`SELECT COUNT(*) AS total FROM sites`).get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
+        const stmt = db.prepare(`SELECT * FROM sites ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+        const sites = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: {
+                records: total,
+                currentPage,
+                totalPages,
+            },
+            data: sites,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
+function pagination(req) {
+    const limit = 15;
+    const currentPage = Number(req.query.page) || 1;
+    const offset = (currentPage - 1) * limit;
+    return { limit, offset, currentPage };
+}
 //clients controllers
 export const getAllClients = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM clients`);
+        const stmt = db.prepare(`SELECT * FROM clients ORDER BY created_at DESC`);
         const clients = stmt.all();
         res.status(200).json({ pagination: {}, data: clients });
     }
@@ -93,7 +111,7 @@ export const updateClient = (req, res) => {
 //plots controllers
 export const getAllPlots = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM plots`);
+        const stmt = db.prepare(`SELECT * FROM plots ORDER BY created_at DESC`);
         const plots = stmt.all();
         res.status(200).json({ pagination: {}, data: plots });
     }
@@ -118,7 +136,7 @@ export const createPlot = (req, res) => {
 //sales controllers
 export const getAllSalesRecords = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM sales`);
+        const stmt = db.prepare(`SELECT * FROM sales ORDER BY created_at DESC`);
         const sales = stmt.all();
         res.status(200).json({ pagination: {}, data: sales });
     }
@@ -171,6 +189,7 @@ export const getDashboardData = (req, res) => {
       JOIN clients c ON sa.client_id = c.id
       JOIN plots p ON sa.plot_id = p.id
       JOIN sites s ON p.site_id = s.id
+      ORDER BY created_at DESC
     `);
         const data = stmt.all();
         res.status(200).json({ pagination: {}, data: data });

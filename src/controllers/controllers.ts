@@ -5,9 +5,25 @@ import db from "../db/db.js";
 //sellers controllers
 export const getAllSellers = (req: Request, res: Response) => {
   try {
-    const stmt = db.prepare(`SELECT * FROM sellers`);
-    const sellers = stmt.all();
-    res.status(200).json({ pagination: {}, data: sellers });
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db
+      .prepare(`SELECT COUNT(*) AS total FROM sellers`)
+      .get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
+    const stmt = db.prepare(
+      `SELECT * FROM sellers ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    );
+    const sellers = stmt.all(limit, offset);
+    res.status(200).json({
+      pagination: { records: total, currentPage, totalPages },
+      data: sellers,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -58,9 +74,28 @@ export const createSite = (req: Request, res: Response) => {
 
 export const getAllSites = (req: Request, res: Response) => {
   try {
-    const stmt = db.prepare(`SELECT * FROM sites`);
-    const sites = stmt.all();
-    res.status(200).json({ pagination: {}, data: sites });
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db.prepare(`SELECT COUNT(*) AS total FROM sites`).get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
+    const stmt = db.prepare(
+      `SELECT * FROM sites ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    );
+    const sites = stmt.all(limit, offset);
+
+    res.status(200).json({
+      pagination: {
+        records: total,
+        currentPage,
+        totalPages,
+      },
+      data: sites,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -69,9 +104,29 @@ export const getAllSites = (req: Request, res: Response) => {
 //clients controllers
 export const getAllClients = (req: Request, res: Response) => {
   try {
-    const stmt = db.prepare(`SELECT * FROM clients`);
-    const clients = stmt.all();
-    res.status(200).json({ pagination: {}, data: clients });
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db
+      .prepare(`SELECT COUNT(*) AS total FROM clients`)
+      .get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
+    const stmt = db.prepare(
+      `SELECT * FROM clients ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    );
+    const clients = stmt.all(limit, offset);
+    res.status(200).json({
+      pagination: {
+        records: total,
+        currentPage,
+        totalPages,
+      },
+      data: clients,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -131,9 +186,23 @@ export const updateClient = (req: Request, res: Response) => {
 //plots controllers
 export const getAllPlots = (req: Request, res: Response) => {
   try {
-    const stmt = db.prepare(`SELECT * FROM plots`);
-    const plots = stmt.all();
-    res.status(200).json({ pagination: {}, data: plots });
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db.prepare(`SELECT COUNT(*) AS total FROM plots`).get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
+    const stmt = db.prepare(`SELECT * FROM plots ORDER BY created_at DESC`);
+    const plots = stmt.all(limit, offset);
+    res
+      .status(200)
+      .json({
+        pagination: { records: total, currentPage, totalPages },
+        data: plots,
+      });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -160,9 +229,23 @@ export const createPlot = (req: Request, res: Response) => {
 //sales controllers
 export const getAllSalesRecords = (req: Request, res: Response) => {
   try {
-    const stmt = db.prepare(`SELECT * FROM sales`);
-    const sales = stmt.all();
-    res.status(200).json({ pagination: {}, data: sales });
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db.prepare(`SELECT COUNT(*) AS total FROM sales`).get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
+    const stmt = db.prepare(
+      `SELECT * FROM sales ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    );
+    const sales = stmt.all(limit, offset);
+    res.status(200).json({
+      pagination: { records: total, currentPage, totalPages },
+      data: sales,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -211,6 +294,15 @@ export const createWitness = (req: Request, res: Response) => {
 //dashboard controllers
 export const getDashboardData = (req: Request, res: Response) => {
   try {
+    const { limit, offset, currentPage } = pagination(req);
+
+    // 1. Correctly alias the count column to match the 'total' variable
+    const result = db.prepare(`SELECT COUNT(*) AS total FROM sales`).get() as {
+      total: number;
+    };
+    const total = result.total;
+    const totalPages = Math.ceil(total / limit);
+
     const stmt = db.prepare(`
       SELECT
           c.id AS client_id,
@@ -224,9 +316,13 @@ export const getDashboardData = (req: Request, res: Response) => {
       JOIN clients c ON sa.client_id = c.id
       JOIN plots p ON sa.plot_id = p.id
       JOIN sites s ON p.site_id = s.id
+      ORDER BY created_at DESC LIMIT ? OFFSET ?
     `);
-    const data = stmt.all();
-    res.status(200).json({ pagination: {}, data: data });
+    const data = stmt.all(limit, offset);
+    res.status(200).json({
+      pagination: { records: total, currentPage, totalPages },
+      data: data,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -352,4 +448,13 @@ export const clientBulkCreate = (req: Request, res: Response) => {
 // check if value is true or false
 function checkBool(value: any): number {
   return value ? 1 : 0;
+}
+
+//another helper function
+function pagination(req: Request) {
+  const limit = 15;
+  const currentPage = Number(req.query.page) || 1;
+  const offset = (currentPage - 1) * limit;
+
+  return { limit, offset, currentPage };
 }
