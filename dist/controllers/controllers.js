@@ -3,9 +3,19 @@ import db from "../db/db.js";
 //sellers controllers
 export const getAllSellers = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM sellers ORDER BY created_at DESC`);
-        const sellers = stmt.all();
-        res.status(200).json({ pagination: {}, data: sellers });
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db
+            .prepare(`SELECT COUNT(*) AS total FROM sellers`)
+            .get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
+        const stmt = db.prepare(`SELECT * FROM sellers ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+        const sellers = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: { records: total, currentPage, totalPages },
+            data: sellers,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -62,18 +72,26 @@ export const getAllSites = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-function pagination(req) {
-    const limit = 15;
-    const currentPage = Number(req.query.page) || 1;
-    const offset = (currentPage - 1) * limit;
-    return { limit, offset, currentPage };
-}
 //clients controllers
 export const getAllClients = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM clients ORDER BY created_at DESC`);
-        const clients = stmt.all();
-        res.status(200).json({ pagination: {}, data: clients });
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db
+            .prepare(`SELECT COUNT(*) AS total FROM clients`)
+            .get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
+        const stmt = db.prepare(`SELECT * FROM clients ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+        const clients = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: {
+                records: total,
+                currentPage,
+                totalPages,
+            },
+            data: clients,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -111,9 +129,17 @@ export const updateClient = (req, res) => {
 //plots controllers
 export const getAllPlots = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM plots ORDER BY created_at DESC`);
-        const plots = stmt.all();
-        res.status(200).json({ pagination: {}, data: plots });
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db.prepare(`SELECT COUNT(*) AS total FROM plots`).get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
+        const stmt = db.prepare(`SELECT * FROM plots ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+        const plots = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: { records: total, currentPage, totalPages },
+            data: plots,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -136,9 +162,17 @@ export const createPlot = (req, res) => {
 //sales controllers
 export const getAllSalesRecords = (req, res) => {
     try {
-        const stmt = db.prepare(`SELECT * FROM sales ORDER BY created_at DESC`);
-        const sales = stmt.all();
-        res.status(200).json({ pagination: {}, data: sales });
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db.prepare(`SELECT COUNT(*) AS total FROM sales`).get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
+        const stmt = db.prepare(`SELECT * FROM sales ORDER BY created_at DESC LIMIT ? OFFSET ?`);
+        const sales = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: { records: total, currentPage, totalPages },
+            data: sales,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -158,29 +192,20 @@ export const createSalesRecord = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-//witness controllers
-export const createWitness = (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty())
-            return res.status(400).json({ errors: errors.array() });
-        const { witness_name, witness_phone, relationship } = req.body;
-        const stmt = db.prepare(`INSERT INTO witness(name, phone, relationship) VALUES(?,?,?)`);
-        const result = stmt.run(witness_name, witness_phone, relationship).lastInsertRowid;
-        res.status(201).json({ data: `New record created with id: ${result}` });
-    }
-    catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
 //dashboard controllers
 export const getDashboardData = (req, res) => {
     try {
+        const { limit, offset, currentPage } = pagination(req);
+        // 1. Correctly alias the count column to match the 'total' variable
+        const result = db.prepare(`SELECT COUNT(*) AS total FROM sales`).get();
+        const total = result.total;
+        const totalPages = Math.ceil(total / limit);
         const stmt = db.prepare(`
       SELECT
           c.id AS client_id,
           c.name AS client_name,
           c.phone AS client_phone,
+          c.created_at AS created_at,
           s.name AS site_name,
           p.size AS plot_size,
           p.plot_no AS plot_no,
@@ -189,10 +214,13 @@ export const getDashboardData = (req, res) => {
       JOIN clients c ON sa.client_id = c.id
       JOIN plots p ON sa.plot_id = p.id
       JOIN sites s ON p.site_id = s.id
-      ORDER BY created_at DESC
+      ORDER BY created_at DESC LIMIT ? OFFSET ?
     `);
-        const data = stmt.all();
-        res.status(200).json({ pagination: {}, data: data });
+        const data = stmt.all(limit, offset);
+        res.status(200).json({
+            pagination: { records: total, currentPage, totalPages },
+            data: data,
+        });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -201,7 +229,7 @@ export const getDashboardData = (req, res) => {
 // create a new client from the dashboard data
 export const clientBulkCreate = (req, res) => {
     try {
-        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, witness_name, witness_nrc, witness_phone, relationship, letter_of_sale, authorization_letter, nrc_url, receipts, // currently unused
+        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, letter_of_sale, authorization_letter, nrc_url, receipts, // currently unused
         site_name, plot_size, plot_no, total_amount, amount_paid, balance, // currently unused
         sales_date, } = req.body;
         // convert the boolean value into 0 or 1
@@ -215,7 +243,6 @@ export const clientBulkCreate = (req, res) => {
         )
       VALUES (?,?,?,?,?,?,?,?)`);
         const plotStmt = db.prepare(`INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`);
-        const witnessStmt = db.prepare(`INSERT INTO witness(client_id, name, nrc, phone, relationship) VALUES(?,?,?,?,?)`);
         const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid, created_at) VALUES (?,?,?,?,?)`);
         const documentsStmt = db.prepare(`INSERT INTO documents (client_id, letter_of_sale_url, authorization_letter_url, nrc_url)
       VALUES (?,?,?,?)`);
@@ -231,9 +258,6 @@ export const clientBulkCreate = (req, res) => {
                 return res.status(400).json({ errors: errors.array() });
             const client_id = clientStmt.run(name, phone, nrc, address, is_allocated, is_authorized, allocation_date, authorization_date).lastInsertRowid;
             const plot_id = plotStmt.run(site_id, plot_size, plot_no, "sold").lastInsertRowid;
-            witnessStmt.run(client_id, witness_name, witness_nrc, // ✅ Correct order
-            witness_phone, // ✅ Correct order
-            relationship);
             salesStmt.run(client_id, plot_id, total_amount, amount_paid, sales_date);
             documentsStmt.run(client_id, letter_of_sale, authorization_letter, nrc_url);
             return client_id;
@@ -248,4 +272,11 @@ export const clientBulkCreate = (req, res) => {
 // check if value is true or false
 function checkBool(value) {
     return value ? 1 : 0;
+}
+//another helper function
+function pagination(req) {
+    const limit = 10;
+    const currentPage = Number(req.query.page) || 1;
+    const offset = (currentPage - 1) * limit;
+    return { limit, offset, currentPage };
 }

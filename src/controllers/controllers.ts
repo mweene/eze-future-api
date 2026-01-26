@@ -195,14 +195,14 @@ export const getAllPlots = (req: Request, res: Response) => {
     const total = result.total;
     const totalPages = Math.ceil(total / limit);
 
-    const stmt = db.prepare(`SELECT * FROM plots ORDER BY created_at DESC`);
+    const stmt = db.prepare(
+      `SELECT * FROM plots ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    );
     const plots = stmt.all(limit, offset);
-    res
-      .status(200)
-      .json({
-        pagination: { records: total, currentPage, totalPages },
-        data: plots,
-      });
+    res.status(200).json({
+      pagination: { records: total, currentPage, totalPages },
+      data: plots,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -269,28 +269,6 @@ export const createSalesRecord = (req: Request, res: Response) => {
   }
 };
 
-//witness controllers
-export const createWitness = (req: Request, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
-
-    const { witness_name, witness_phone, relationship } = req.body;
-    const stmt = db.prepare(
-      `INSERT INTO witness(name, phone, relationship) VALUES(?,?,?)`,
-    );
-    const result = stmt.run(
-      witness_name,
-      witness_phone,
-      relationship,
-    ).lastInsertRowid;
-    res.status(201).json({ data: `New record created with id: ${result}` });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 //dashboard controllers
 export const getDashboardData = (req: Request, res: Response) => {
   try {
@@ -308,6 +286,7 @@ export const getDashboardData = (req: Request, res: Response) => {
           c.id AS client_id,
           c.name AS client_name,
           c.phone AS client_phone,
+          c.created_at AS created_at,
           s.name AS site_name,
           p.size AS plot_size,
           p.plot_no AS plot_no,
@@ -340,10 +319,6 @@ export const clientBulkCreate = (req: Request, res: Response) => {
       allocation_date,
       authorized,
       authorization_date,
-      witness_name,
-      witness_nrc,
-      witness_phone,
-      relationship,
       letter_of_sale,
       authorization_letter,
       nrc_url,
@@ -374,10 +349,6 @@ export const clientBulkCreate = (req: Request, res: Response) => {
 
     const plotStmt = db.prepare(
       `INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`,
-    );
-
-    const witnessStmt = db.prepare(
-      `INSERT INTO witness(client_id, name, nrc, phone, relationship) VALUES(?,?,?,?,?)`,
     );
 
     const salesStmt = db.prepare(
@@ -418,14 +389,6 @@ export const clientBulkCreate = (req: Request, res: Response) => {
         "sold",
       ).lastInsertRowid;
 
-      witnessStmt.run(
-        client_id,
-        witness_name,
-        witness_nrc, // ✅ Correct order
-        witness_phone, // ✅ Correct order
-        relationship,
-      );
-
       salesStmt.run(client_id, plot_id, total_amount, amount_paid, sales_date);
 
       documentsStmt.run(
@@ -452,7 +415,7 @@ function checkBool(value: any): number {
 
 //another helper function
 function pagination(req: Request) {
-  const limit = 15;
+  const limit = 10;
   const currentPage = Number(req.query.page) || 1;
   const offset = (currentPage - 1) * limit;
 

@@ -4,7 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import router from "./router/routes.js";
 const app = express();
-const port = 4040;
+const port = 4400;
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));

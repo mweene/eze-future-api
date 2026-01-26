@@ -5,9 +5,9 @@ import { body } from "express-validator";
 const router = Router();
 
 //client routes
-router.get("/api/clients", controllers.getAllClients);
+router.get("/api/v1/clients", controllers.getAllClients);
 router.post(
-  "/api/clients",
+  "/api/v1/clients",
   [
     body("name")
       .notEmpty()
@@ -23,12 +23,12 @@ router.post(
   ],
   controllers.createClient,
 );
-router.put("/api/clients/:id", controllers.updateClient);
+router.put("/api/v1/clients/:id", controllers.updateClient);
 
 //seller routes
-router.get("/api/sellers", controllers.getAllSellers);
+router.get("/api/v1/sellers", controllers.getAllSellers);
 router.post(
-  "/api/sellers",
+  "/api/v1/sellers",
   [
     body("name").notEmpty().withMessage("Name is required").escape().trim(),
     body("phone").notEmpty().withMessage("Phone is required").escape().trim(),
@@ -49,9 +49,9 @@ router.post(
 );
 
 //sites routes
-router.get("/api/sites", controllers.getAllSites);
+router.get("/api/v1/sites", controllers.getAllSites);
 router.post(
-  "/api/sites",
+  "/api/v1/sites",
   [
     body("seller_id")
       .notEmpty()
@@ -78,9 +78,9 @@ router.post(
 );
 
 //plots routes
-router.get("/api/plots", controllers.getAllPlots);
+router.get("/api/v1/plots", controllers.getAllPlots);
 router.post(
-  "/api/plots",
+  "/api/v1/plots",
   [
     body("site_id")
       .notEmpty()
@@ -99,9 +99,9 @@ router.post(
 );
 
 //sales routes
-router.get("/api/sales", controllers.getAllSalesRecords);
+router.get("/api/v1/sales", controllers.getAllSalesRecords);
 router.post(
-  "/api/sales",
+  "/api/v1/sales",
   [
     body("client_id")
       .notEmpty()
@@ -122,9 +122,9 @@ router.post(
 );
 
 //dashboard data and validation
-router.get("/api/dashboard", controllers.getDashboardData);
+router.get("/api/v1/dashboard", controllers.getDashboardData);
 router.post(
-  "/api/dashboard",
+  "/api/v1/dashboard",
   [
     body("name").notEmpty().trim().withMessage("name is required"),
     body("nrc").notEmpty().trim().withMessage("client nrc is required"),

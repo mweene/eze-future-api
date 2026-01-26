@@ -3,8 +3,8 @@ import * as controllers from "../controllers/controllers.js";
 import { body } from "express-validator";
 const router = Router();
 //client routes
-router.get("/api/clients", controllers.getAllClients);
-router.post("/api/clients", [
+router.get("/api/v1/clients", controllers.getAllClients);
+router.post("/api/v1/clients", [
     body("name")
         .notEmpty()
         .toLowerCase()
@@ -17,10 +17,10 @@ router.post("/api/clients", [
     body("is_allocated").optional(),
     body("is_authorized").optional(),
 ], controllers.createClient);
-router.put("/api/clients/:id", controllers.updateClient);
+router.put("/api/v1/clients/:id", controllers.updateClient);
 //seller routes
-router.get("/api/sellers", controllers.getAllSellers);
-router.post("/api/sellers", [
+router.get("/api/v1/sellers", controllers.getAllSellers);
+router.post("/api/v1/sellers", [
     body("name").notEmpty().withMessage("Name is required").escape().trim(),
     body("phone").notEmpty().withMessage("Phone is required").escape().trim(),
     body("total")
@@ -37,8 +37,8 @@ router.post("/api/sellers", [
         .trim(),
 ], controllers.createSeller);
 //sites routes
-router.get("/api/sites", controllers.getAllSites);
-router.post("/api/sites", [
+router.get("/api/v1/sites", controllers.getAllSites);
+router.post("/api/v1/sites", [
     body("seller_id")
         .notEmpty()
         .isNumeric()
@@ -61,8 +61,8 @@ router.post("/api/sites", [
         .withMessage("number of plots is required"),
 ], controllers.createSite);
 //plots routes
-router.get("/api/plots", controllers.getAllPlots);
-router.post("/api/plots", [
+router.get("/api/v1/plots", controllers.getAllPlots);
+router.post("/api/v1/plots", [
     body("site_id")
         .notEmpty()
         .isNumeric()
@@ -77,8 +77,8 @@ router.post("/api/plots", [
     body("status").optional(),
 ], controllers.createPlot);
 //sales routes
-router.get("/api/sales", controllers.getAllSalesRecords);
-router.post("/api/sales", [
+router.get("/api/v1/sales", controllers.getAllSalesRecords);
+router.post("/api/v1/sales", [
     body("client_id")
         .notEmpty()
         .isNumeric()
@@ -95,8 +95,8 @@ router.post("/api/sales", [
         .withMessage("balance must be a number"),
 ], controllers.createSalesRecord);
 //dashboard data and validation
-router.get("/api/dashboard", controllers.getDashboardData);
-router.post("/api/dashboard", [
+router.get("/api/v1/dashboard", controllers.getDashboardData);
+router.post("/api/v1/dashboard", [
     body("name").notEmpty().trim().withMessage("name is required"),
     body("nrc").notEmpty().trim().withMessage("client nrc is required"),
     body("phone").notEmpty().trim().withMessage("client phone is required"),
