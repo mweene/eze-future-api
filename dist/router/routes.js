@@ -126,4 +126,6 @@ router.post("/api/v1/dashboard", [
         .withMessage("amount paid is required"),
     body("sales_date").notEmpty().trim().withMessage("sales date is required"),
 ], controllers.clientBulkCreate);
+//fillers site names & available plots
+router.get("/api/v1/sitenames", controllers.getSiteNames);
 export default router;

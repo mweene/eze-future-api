@@ -207,9 +207,10 @@ export const getDashboardData = (req, res) => {
           c.phone AS client_phone,
           c.created_at AS created_at,
           s.name AS site_name,
+          sa.total AS total_amount,
+          sa.paid AS amount_paid,
           p.size AS plot_size,
-          p.plot_no AS plot_no,
-          p.status AS status
+          p.plot_no AS plot_no
       FROM sales sa
       JOIN clients c ON sa.client_id = c.id
       JOIN plots p ON sa.plot_id = p.id
@@ -229,8 +230,7 @@ export const getDashboardData = (req, res) => {
 // create a new client from the dashboard data
 export const clientBulkCreate = (req, res) => {
     try {
-        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, letter_of_sale, authorization_letter, nrc_url, receipts, // currently unused
-        site_name, plot_size, plot_no, total_amount, amount_paid, balance, // currently unused
+        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, googledrive_url, site_name, plot_size, plot_no, total_amount, amount_paid, balance, // currently unused
         sales_date, } = req.body;
         // convert the boolean value into 0 or 1
         const is_allocated = checkBool(allocated);
@@ -244,8 +244,8 @@ export const clientBulkCreate = (req, res) => {
       VALUES (?,?,?,?,?,?,?,?)`);
         const plotStmt = db.prepare(`INSERT INTO plots(site_id, size, plot_no, status) VALUES (?,?,?,?)`);
         const salesStmt = db.prepare(`INSERT INTO sales(client_id, plot_id, total, paid, created_at) VALUES (?,?,?,?,?)`);
-        const documentsStmt = db.prepare(`INSERT INTO documents (client_id, letter_of_sale_url, authorization_letter_url, nrc_url)
-      VALUES (?,?,?,?)`);
+        const documentsStmt = db.prepare(`INSERT INTO documents (client_id, name, googledrive_url)
+      VALUES (?,?,?)`);
         const insertTransaction = db.transaction(() => {
             //get the site_id before the transaction starts
             const siteRow = siteIDStmt.get(site_name);
@@ -259,7 +259,7 @@ export const clientBulkCreate = (req, res) => {
             const client_id = clientStmt.run(name, phone, nrc, address, is_allocated, is_authorized, allocation_date, authorization_date).lastInsertRowid;
             const plot_id = plotStmt.run(site_id, plot_size, plot_no, "sold").lastInsertRowid;
             salesStmt.run(client_id, plot_id, total_amount, amount_paid, sales_date);
-            documentsStmt.run(client_id, letter_of_sale, authorization_letter, nrc_url);
+            documentsStmt.run(client_id, name, googledrive_url);
             return client_id;
         });
         const client_id = insertTransaction();
@@ -269,13 +269,23 @@ export const clientBulkCreate = (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+//get all site names
+export function getSiteNames(req, res) {
+    try {
+        const siteNames = db.prepare(`SELECT name FROM sites`).all();
+        res.status(200).json({ data: siteNames });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 // check if value is true or false
 function checkBool(value) {
     return value ? 1 : 0;
 }
 //another helper function
 function pagination(req) {
-    const limit = 10;
+    const limit = 15;
     const currentPage = Number(req.query.page) || 1;
     const offset = (currentPage - 1) * limit;
     return { limit, offset, currentPage };

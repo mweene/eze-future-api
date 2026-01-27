@@ -288,9 +288,10 @@ export const getDashboardData = (req: Request, res: Response) => {
           c.phone AS client_phone,
           c.created_at AS created_at,
           s.name AS site_name,
+          sa.total AS total_amount,
+          sa.paid AS amount_paid,
           p.size AS plot_size,
-          p.plot_no AS plot_no,
-          p.status AS status
+          p.plot_no AS plot_no
       FROM sales sa
       JOIN clients c ON sa.client_id = c.id
       JOIN plots p ON sa.plot_id = p.id
@@ -319,10 +320,7 @@ export const clientBulkCreate = (req: Request, res: Response) => {
       allocation_date,
       authorized,
       authorization_date,
-      letter_of_sale,
-      authorization_letter,
-      nrc_url,
-      receipts, // currently unused
+      googledrive_url,
       site_name,
       plot_size,
       plot_no,
@@ -356,8 +354,8 @@ export const clientBulkCreate = (req: Request, res: Response) => {
     );
 
     const documentsStmt = db.prepare(
-      `INSERT INTO documents (client_id, letter_of_sale_url, authorization_letter_url, nrc_url)
-      VALUES (?,?,?,?)`,
+      `INSERT INTO documents (client_id, name, googledrive_url)
+      VALUES (?,?,?)`,
     );
 
     const insertTransaction = db.transaction(() => {
@@ -391,12 +389,7 @@ export const clientBulkCreate = (req: Request, res: Response) => {
 
       salesStmt.run(client_id, plot_id, total_amount, amount_paid, sales_date);
 
-      documentsStmt.run(
-        client_id,
-        letter_of_sale,
-        authorization_letter,
-        nrc_url,
-      );
+      documentsStmt.run(client_id, name, googledrive_url);
 
       return client_id;
     });
@@ -408,6 +401,16 @@ export const clientBulkCreate = (req: Request, res: Response) => {
   }
 };
 
+//get all site names
+export function getSiteNames(req: Request, res: Response) {
+  try {
+    const siteNames = db.prepare(`SELECT name FROM sites`).all();
+    res.status(200).json({ data: siteNames });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
 // check if value is true or false
 function checkBool(value: any): number {
   return value ? 1 : 0;
@@ -415,7 +418,7 @@ function checkBool(value: any): number {
 
 //another helper function
 function pagination(req: Request) {
-  const limit = 10;
+  const limit = 15;
   const currentPage = Number(req.query.page) || 1;
   const offset = (currentPage - 1) * limit;
 
