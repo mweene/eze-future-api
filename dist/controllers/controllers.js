@@ -194,11 +194,14 @@ export const createSalesRecord = (req, res) => {
 };
 //dashboard controllers
 export const getDashboardData = (req, res) => {
+    var _a;
     try {
         const { limit, offset, currentPage } = pagination(req);
-        // 1. Correctly alias the count column to match the 'total' variable
-        const result = db.prepare(`SELECT COUNT(*) AS total FROM sales`).get();
-        const total = result.total;
+        // type the result explicitly
+        const result = db
+            .prepare(`SELECT COUNT(*) AS total FROM clients`)
+            .get();
+        const total = (_a = result === null || result === void 0 ? void 0 : result.total) !== null && _a !== void 0 ? _a : 0; // fallback to 0 if undefined
         const totalPages = Math.ceil(total / limit);
         const stmt = db.prepare(`
       SELECT
@@ -207,15 +210,18 @@ export const getDashboardData = (req, res) => {
           c.phone AS client_phone,
           c.created_at AS created_at,
           s.name AS site_name,
-          sa.total AS total_amount,
-          sa.paid AS amount_paid,
-          p.size AS plot_size,
-          p.plot_no AS plot_no
-      FROM sales sa
-      JOIN clients c ON sa.client_id = c.id
-      JOIN plots p ON sa.plot_id = p.id
-      JOIN sites s ON p.site_id = s.id
-      ORDER BY created_at DESC LIMIT ? OFFSET ?
+          SUM(sa.total) AS total_amount,
+          SUM(sa.paid) AS amount_paid,
+          COUNT(p.id) AS plot_count,
+          GROUP_CONCAT(p.size, ', ') AS plot_size,
+          GROUP_CONCAT(p.plot_no, ', ') AS plot_no
+      FROM clients c
+      LEFT JOIN sales sa ON sa.client_id = c.id
+      LEFT JOIN plots p ON sa.plot_id = p.id
+      LEFT JOIN sites s ON p.site_id = s.id
+      GROUP BY c.id, s.name
+      ORDER BY c.id DESC
+      LIMIT ? OFFSET ?
     `);
         const data = stmt.all(limit, offset);
         res.status(200).json({
@@ -230,8 +236,7 @@ export const getDashboardData = (req, res) => {
 // create a new client from the dashboard data
 export const clientBulkCreate = (req, res) => {
     try {
-        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, googledrive_url, site_name, plot_size, plot_no, total_amount, amount_paid, balance, // currently unused
-        sales_date, } = req.body;
+        const { name, nrc, phone, address, allocated, allocation_date, authorized, authorization_date, googledrive_url, site_name, plot_size, plot_no, total_amount, amount_paid, sales_date, } = req.body;
         // convert the boolean value into 0 or 1
         const is_allocated = checkBool(allocated);
         const is_authorized = checkBool(authorized);
@@ -272,7 +277,7 @@ export const clientBulkCreate = (req, res) => {
 //get all site names
 export function getSiteNames(req, res) {
     try {
-        const siteNames = db.prepare(`SELECT name FROM sites`).all();
+        const siteNames = db.prepare(`SELECT id, name FROM sites`).all();
         res.status(200).json({ data: siteNames });
     }
     catch (error) {
