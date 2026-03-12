@@ -1,46 +1,44 @@
 {
-  "name": "eze-future-api",
-  "version": "0.0.0",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint . --ext .ts",
-    "build": "tsc",
-    "dev-kill": "kill -9 $(lsof -t -i:4400) 2>/dev/null || true && nodemon dist/index.js",
-    "dev": "nodemon dist/index.js",
-    "seed": "npx tsx src/seed.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mweene/eze-future-api.git"
-  },
-  "author": "harrison mweene",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/mweene/eze-future-api/issues"
-  },
-  "homepage": "https://github.com/mweene/eze-future-api#readme",
-  "description": "",
-  "dependencies": {
-    "better-sqlite3": "^12.2.0",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "express-validator": "^7.3.1",
-    "helmet": "^8.1.0",
-    "morgan": "^1.10.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.33.0",
-    "@types/better-sqlite3": "^7.6.13",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/morgan": "^1.9.10",
-    "@types/node": "^24.2.1",
-    "eslint": "^9.33.0",
-    "globals": "^16.3.0",
-    "nodemon": "^3.1.11",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.39.1"
-  }
+    "name": "eze-future-api",
+    "version": "0.0.0",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "start": "node dist/server.js",
+        "lint": "eslint . --ext .ts"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mweene/eze-future-api.git"
+    },
+    "author": "harrison mweene",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/mweene/eze-future-api/issues"
+    },
+    "homepage": "https://github.com/mweene/eze-future-api#readme",
+    "description": "",
+    "dependencies": {
+        "better-sqlite3": "^12.2.0",
+        "cors": "^2.8.5",
+        "express": "^5.1.0",
+        "express-validator": "^7.3.1",
+        "helmet": "^8.1.0",
+        "morgan": "^1.10.1"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.33.0",
+        "@types/better-sqlite3": "^7.6.13",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/morgan": "^1.9.10",
+        "@types/node": "^24.2.1",
+        "eslint": "^9.33.0",
+        "globals": "^16.3.0",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.2",
+        "typescript-eslint": "^8.39.1"
+    }
 }
